@@ -13,11 +13,12 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   addToCart,
   decrementQuantityCart,
-  incrementQuantity
+  incrementQuantity,
+  cleanCart
 } from "../CartReducer";
-import { decrementQuantityProduct, incrementQty } from "../ProductReducer";
-
-
+import { decrementQuantityProduct, incrementQty ,clearProduct} from "../ProductReducer";
+import { doc, setDoc } from "firebase/firestore";
+import { db ,auth} from "../firebase";
 
 const CartScreen = () => {
   const cart = useSelector((state) => state.cart.cart);
@@ -35,8 +36,21 @@ const CartScreen = () => {
     month: "long",
     day: "numeric",
   });
-  console.log(route ,"jne;;;kaga")
+  const userUid = auth.currentUser.uid
+
+  const placeOrder = async () => {
+    navigation.navigate("Order");
+    disPatch(cleanCart());
+    disPatch(clearProduct())
+    await setDoc(doc(db,'users',`${userUid}`),{
+      orders:{...cart},
+      pickUpDetails:route.params,
+    },{
+      merge:true
+    })
+  };
   return (
+    <>
     <ScrollView style={styles.safeArea}>
       {total === 0 ? (
         <>
@@ -344,14 +358,54 @@ const CartScreen = () => {
                     To Pay
                   </Text>
                   <Text style={{ fontSize: 18, fontWeight: "bold" }}>
-                    {Math.round(total * 1.15)}
+                    {Math.round(total * 1.15)} {currency}
                   </Text>
                 </View>
               </View>
             </View>
+
         </>
       )}
     </ScrollView>
+
+{total === 0 ? null : (
+  <Pressable
+    style={{
+      backgroundColor: "#088F8F",
+      marginTop: "auto",
+      padding: 10,
+      marginBottom: 40,
+      margin: 15,
+      borderRadius: 7,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    }}
+  >
+    <View>
+      <Text style={{ fontSize: 17, fontWeight: "600", color: "white" }}>
+        {cart.length} items | $ {total}
+      </Text>
+      <Text
+        style={{
+          fontSize: 15,
+          fontWeight: "400",
+          color: "white",
+          marginVertical: 6,
+        }}
+      >
+        extra charges might apply
+      </Text>
+    </View>
+
+    <Pressable onPress={placeOrder}>
+      <Text style={{ fontSize: 17, fontWeight: "600", color: "white" }}>
+        Place Order
+      </Text>
+    </Pressable>
+  </Pressable>
+)}
+</>
   );
 };
 

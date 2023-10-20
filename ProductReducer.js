@@ -21,10 +21,13 @@ export const ProductSlice=createSlice({
             }else{
                 itemPresent.quantity--;
             }
+        },
+       clearProduct:(state) => {
+            state.product = state.product.forEach(product=>product.quantity = 0);
         }
     }
 });
 
-export const {incrementQty,decrementQuantityProduct,getProducts} = ProductSlice.actions;
+export const {incrementQty,decrementQuantityProduct,getProducts,clearProduct} = ProductSlice.actions;
 
 export default ProductSlice.reducer;

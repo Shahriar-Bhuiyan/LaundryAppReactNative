@@ -18,19 +18,22 @@ import Dressitem from "../Components/Dressitem";
 import { useDispatch, useSelector } from "react-redux";
 import { getProducts } from "../ProductReducer";
 import { useNavigation } from "@react-navigation/native";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 
 const HomeScreen = () => {
+  const [item,setItem] = useState([]);
   const cart = useSelector((state) => state.cart.cart);
   const total = cart
     .map((item) => item.quantity * item.price)
     .reduce((curr, prev) => curr + prev, 0);
 
-
+  const product = useSelector((state) => state.product.product);
   const currency = String.fromCharCode(0x09f3);
-  
+  const dispatch = useDispatch()
   const navigation = useNavigation()
 
-  console.log("myself car", cart);
+  console.log("myself cart", cart);
   const [displayCurrentAddress, setDisplayCurrentAddress] = useState(
     "We are loading your location"
   );
@@ -39,6 +42,22 @@ const HomeScreen = () => {
   useEffect(() => {
     checkIfLocationEnabled();
     getCurrentLocation();
+    
+  }, []);
+
+  useEffect(() => {
+    if (product.length > 0) return;
+    const fetchProducts = async () => {
+      const colRef = collection(db,'types');
+      const docsSnap = await getDocs(colRef);
+      let updatedItem = []
+      docsSnap.forEach((doc)=>{
+        updatedItem.push(doc.data())
+      });
+      console.log('my loaded product',updatedItem)
+      updatedItem.map((select)=>dispatch(getProducts(select)))
+    };
+    fetchProducts();
   }, []);
 
   const checkIfLocationEnabled = async () => {
@@ -100,73 +119,11 @@ const HomeScreen = () => {
     }
   };
 
-  const product = useSelector((state) => state.product.product);
-  const dispatch = useDispatch();
+  
 
-  console.log("Ha re babuha ayo ha ky", product);
+  
+  console.log('These are my products',JSON.stringify(product))
 
-  useEffect(() => {
-    if (product.length > 0) return;
-
-    const fetchProducts = () => {
-      services.map((service) => dispatch(getProducts(service)));
-    };
-    fetchProducts();
-  }, []);
-
-  const services = [
-    {
-      id: "0",
-      image: "https://cdn-icons-png.flaticon.com/128/4643/4643574.png",
-      name: "shirt",
-      quantity: 0,
-      price: 10
-    },
-    {
-      id: "11",
-      image: "https://cdn-icons-png.flaticon.com/128/892/892458.png",
-      name: "T-shirt",
-      quantity: 0,
-      price: 10
-    },
-    {
-      id: "12",
-      image: "https://cdn-icons-png.flaticon.com/128/9609/9609161.png",
-      name: "dresses",
-      quantity: 0,
-      price: 10
-    },
-    {
-      id: "13",
-      image: "https://cdn-icons-png.flaticon.com/128/599/599388.png",
-      name: "jeans",
-      quantity: 0,
-      price: 10
-    },
-    {
-      id: "14",
-      image: "https://cdn-icons-png.flaticon.com/128/9431/9431166.png",
-      name: "Sweater",
-      quantity: 0,
-      price: 10
-    },
-    {
-      id: "15",
-      image: "https://cdn-icons-png.flaticon.com/128/3345/3345397.png",
-      name: "shorts",
-      quantity: 0,
-      price: 10
-    },
-    {
-      id: "16",
-      image: "https://cdn-icons-png.flaticon.com/128/293/293241.png",
-      name: "Sleeveless",
-      quantity: 0,
-      price: 10
-    }
-  ];
-
-  console.log(product);
   return (
     <>
       <ScrollView
@@ -181,7 +138,7 @@ const HomeScreen = () => {
             <Text style={{ fontSize: 18, fontWeight: "600" }}>Home</Text>
             <Text>{displayCurrentAddress}</Text>
           </View>
-          <Pressable style={{ marginLeft: "auto", marginRight: 10 }}>
+          <Pressable onPress={()=>navigation.navigate('profile')} style={{ marginLeft: "auto", marginRight: 10 }}>
             <Image
               style={{ width: 50, height: 50, borderRadius: 25 }}
               source={{
@@ -211,7 +168,7 @@ const HomeScreen = () => {
         {/* Services */}
         <Services />
         {/* Render all the product */}
-        {product.map((item, index) => (
+        {product?.map((item, index) => (
           <Dressitem item={item} key={index} />
         ))}
       </ScrollView>
